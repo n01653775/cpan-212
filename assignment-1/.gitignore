@@ -1,0 +1,9 @@
+# Ignore .env files (for sensitive info like DB URI)
+.env
+
+# Ignore node_modules folder
+node_modules/
+
+# Ignore any OS-specific files
+.DS_Store   # macOS
+Thumbs.db   # Windows
