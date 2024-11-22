@@ -1,5 +1,0 @@
-{
-  "task": "practice task 1",
-  "createdAt": "2024-11-18T10:00:00Z",
-  "dueDate": "2024-11-25T17:00:00Z"
-}
