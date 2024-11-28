@@ -1,77 +1,103 @@
 // controllers/taskController.js
-
-// In-memory tasks array (just for learning)
-let tasks = [];
+const Task = require('../models/taskModel');  // Import the Task model
 
 // Create a new task
-const createTask = (req, res) => {
-  const { task, createdAt, dueDate } = req.body;
+const createTask = async (req, res) => {
+  const { task, dueDate } = req.body;  // Extract 'task' and 'dueDate' from request body
 
   if (!task) {
     return res.status(400).json({ message: 'Task description is required.' });
   }
 
-  const newTask = {
-    id: tasks.length + 1,
+  const newTask = new Task({
     task,
-    completed: false, // Default value
-    createdAt: createdAt || new Date().toISOString(),
-    dueDate: dueDate || null,
-    updatedAt: new Date().toISOString(),
-  };
+    dueDate,
+    completed: false,  // Default value
+  });
 
-  tasks.push(newTask);  // Add to the in-memory list
-  res.status(201).json({ message: 'Task added to the list', task: newTask });
+  try {
+    // Save the new task to MongoDB
+    const savedTask = await newTask.save();
+    res.status(201).json({ message: 'Task added to the list', task: savedTask });
+  } catch (err) {
+    console.error('Error saving task:', err);
+    res.status(500).json({ error: 'Error saving task', details: err.message });
+  }
 };
 
 // Get all tasks
-const getTasks = (req, res) => {
-  res.json({ tasks });
+const getTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find();  // Get all tasks from MongoDB
+    res.json(tasks);  // Send tasks as response
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching tasks', details: err.message });
+  }
 };
 
 // Update a task
-const updateTask = (req, res) => {
+const updateTask = async (req, res) => {
   const { id } = req.params;
-  const { task } = req.body;
+  const { task, dueDate } = req.body;
 
   if (!task) {
     return res.status(400).json({ message: 'Please provide the updated task.' });
   }
 
-  const taskIndex = tasks.findIndex(t => t.id === parseInt(id));
-  if (taskIndex === -1) {
-    return res.status(404).json({ message: 'Task not found.' });
-  }
+  try {
+    // Find and update the task by ID
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      { task, dueDate, updatedAt: new Date() },  // Update fields
+      { new: true }  // Return the updated task
+    );
 
-  tasks[taskIndex].task = task;  // Update task
-  tasks[taskIndex].updatedAt = new Date().toISOString();  // Update timestamp
-  res.json({ message: 'task updated', task: tasks[taskIndex] });
+    if (!updatedTask) {
+      return res.status(404).json({ message: 'Task not found.' });
+    }
+
+    res.json({ message: 'Task updated', task: updatedTask });
+  } catch (err) {
+    res.status(500).json({ error: 'Error updating task', details: err.message });
+  }
 };
 
 // Mark a task as completed
-const markTaskCompleted = (req, res) => {
+const markTaskCompleted = async (req, res) => {
   const { id } = req.params;
-  const taskIndex = tasks.findIndex(t => t.id === parseInt(id));
 
-  if (taskIndex === -1) {
-    return res.status(404).json({ message: 'Task not found.' });
+  try {
+    const task = await Task.findByIdAndUpdate(
+      id,
+      { completed: true, updatedAt: new Date() },  // Mark as completed
+      { new: true }  // Return updated task
+    );
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found.' });
+    }
+
+    res.json({ message: 'Task completed', task });
+  } catch (err) {
+    res.status(500).json({ error: 'Error marking task completed', details: err.message });
   }
-
-  tasks[taskIndex].completed =true;  // Mark as completed
-  res.json({ message: 'Task completed', task: tasks[taskIndex] });
 };
 
 // Delete a task
-const deleteTask = (req, res) => {
+const deleteTask = async (req, res) => {
   const { id } = req.params;
-  const taskIndex = tasks.findIndex(t => t.id === parseInt(id));
 
-  if (taskIndex === -1) {
-    return res.status(404).json({ message: 'Task not found.' });
+  try {
+    const deletedTask = await Task.findByIdAndDelete(id);  // Delete task by ID
+
+    if (!deletedTask) {
+      return res.status(404).json({ message: 'Task not found.' });
+    }
+
+    res.json({ message: 'Task deleted', task: deletedTask });
+  } catch (err) {
+    res.status(500).json({ error: 'Error deleting task', details: err.message });
   }
-
-  const deletedTask = tasks.splice(taskIndex, 1);  // Remove from list
-  res.json({ message: 'Task deleted', task: deletedTask[0] });
 };
 
 module.exports = {

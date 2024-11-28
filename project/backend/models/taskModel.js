@@ -1,16 +1,14 @@
-// models/taskModel.js
+const mongoose = require('mongoose');
 
-// A simple task model (you can later expand this for MongoDB or other DB)
-class Task {
-    constructor(id, task, completed = false, createdAt = new Date(), dueDate = null) {
-      this.id = id;
-      this.task = task;
-      this.completed = completed;
-      this.createdAt = createdAt;
-      this.dueDate = dueDate;
-      this.updatedAt = new Date();
-    }
-  }
-  
-  module.exports = Task;
-  
+// Task Schema
+const taskSchema = new mongoose.Schema({
+  task: { type: String, required: true },
+  completed: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  dueDate: { type: Date, default: null }
+});
+
+// Create and export the Task model
+const Task = mongoose.model('Task', taskSchema);
+
+module.exports = Task;

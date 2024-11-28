@@ -1,7 +1,6 @@
-// src/services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/tasks';  // Your backend URL
+const API_URL = 'http://localhost:5000/tasks';  // Updated API URL
 
 // Get all tasks
 export const getTasks = async () => {
@@ -24,7 +23,17 @@ export const createTask = async (taskData) => {
   }
 };
 
-// Update a task (Mark as completed)
+// Update a task
+export const updateTask = async (taskId, updatedData) => {
+  try {
+    const response = await axios.put(`${API_URL}/${taskId}`, updatedData);
+    return response.data.task;
+  } catch (error) {
+    console.error('Error updating task:', error);
+  }
+};
+
+// Mark a task as completed
 export const markTaskCompleted = async (taskId) => {
   try {
     const response = await axios.put(`${API_URL}/${taskId}/completed`);

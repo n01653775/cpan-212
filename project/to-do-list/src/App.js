@@ -1,120 +1,118 @@
-import React, { useState } from 'react';
-import TaskForm from './components/TaskForm';
-import TaskList from './components/TaskList';
+import React, { useState, useEffect } from 'react';
+import { getTasks, createTask, markTaskCompleted, deleteTask, updateTask } from './services/api'; // Import the updateTask function
 
-function App() {
+const App = () => {
   const [tasks, setTasks] = useState([]);
-  const [editingTask, setEditingTask] = useState(null);
+  const [task, setTask] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTaskText, setEditingTaskText] = useState('');
 
-  // Handle new task creation
-  const handleTaskCreated = (newTaskText, newDueDate) => {
-    const newTask = {
-      name: newTaskText,
-      dueDate: newDueDate,
-    };
+  // Fetch tasks when the component mounts
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
-    fetch('http://localhost:5000/tasks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newTask),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setTasks((prevTasks) => [...prevTasks, data]);
-      })
-      .catch((error) => {
-        console.error('Error creating task:', error);
-      });
+  // Fetch tasks using the imported API function
+  const fetchTasks = async () => {
+    const tasks = await getTasks();
+    setTasks(tasks);
   };
 
-  // Handle task deletion
-  const handleDelete = (taskId) => {
-    fetch(`http://localhost:5000/tasks/${taskId}`, {
-      method: 'DELETE',
-    })
-      .then((response) => response.json())
-      .then(() => {
-        setTasks(tasks.filter((task) => task.id !== taskId));
-      })
-      .catch((error) => {
-        console.error('Error deleting task:', error);
-      });
+  // Handle task creation using the imported API function
+  const createNewTask = async () => {
+    const newTask = await createTask({ task, dueDate });
+    setTask('');
+    setDueDate('');
+    fetchTasks(); // Refresh task list
   };
 
-  // Handle editing task
-  const handleEdit = (taskId) => {
-    const taskToEdit = tasks.find((task) => task.id === taskId);
-    setEditingTask(taskToEdit);
+  // Mark a task as completed using the imported API function
+  const completeTask = async (id) => {
+    await markTaskCompleted(id);
+    fetchTasks(); // Refresh task list
   };
 
-  // Save the edited task
-  const handleSaveEdit = (editedTaskText, editedDueDate) => {
-    fetch(`http://localhost:5000/tasks/${editingTask.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: editedTaskText,
-        dueDate: editedDueDate,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.id === editingTask.id
-              ? { ...task, name: editedTaskText, dueDate: editedDueDate }
-              : task
-          )
-        );
-        setEditingTask(null); // Clear editing state
-      })
-      .catch((error) => {
-        console.error('Error editing task:', error);
-      });
+  // Handle task deletion using the imported API function
+  const removeTask = async (id) => {
+    await deleteTask(id);
+    fetchTasks(); // Refresh task list
   };
 
-  // Mark task as completed
-  const handleMarkCompleted = (taskId) => {
-    fetch(`http://localhost:5000/tasks/${taskId}/completed`, {
-      method: 'PUT',
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.id === taskId ? { ...task, completed: true } : task
-          )
-        );
-      })
-      .catch((error) => {
-        console.error('Error marking task as completed:', error);
-      });
+  // Handle task update using the imported API function
+  const updateExistingTask = async () => {
+    const updatedTask = await updateTask(editingTaskId, { task: editingTaskText });
+    setEditingTaskId(null);
+    setEditingTaskText('');
+    fetchTasks(); // Refresh task list after updating
+  };
+
+  // Function to format the due date (only showing the date part)
+  const formatDate = (date) => {
+    if (!date) return 'No due date'; // If no due date, return a default text
+    const formattedDate = new Date(date).toLocaleDateString('en-US'); // Format as MM/DD/YYYY
+    return formattedDate;
   };
 
   return (
-    <div>
-      <h2>my to-do list</h2>
-      <TaskForm
-        onTaskCreated={handleTaskCreated}
-        taskToEdit={editingTask}
-        onSaveEdit={handleSaveEdit}
-      />
-      {tasks.length === 0 ? (
-        <p>No tasks available.</p>
-      ) : (
-        <TaskList
-          tasks={tasks}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-          onMarkCompleted={handleMarkCompleted}
+    <div className="app">
+      <h1>To-Do List</h1>
+      
+      <div className="task-input">
+        <input
+          type="text"
+          value={task}
+          onChange={(e) => setTask(e.target.value)}
+          placeholder="Enter task"
         />
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+        <button onClick={createNewTask}>Add Task</button>
+      </div>
+
+      {editingTaskId && (
+        <div className="edit-task">
+          <input
+            type="text"
+            value={editingTaskText}
+            onChange={(e) => setEditingTaskText(e.target.value)}
+          />
+          <button onClick={updateExistingTask}>Update Task</button>
+        </div>
       )}
+
+      <div className="task-list">
+        <ul>
+          {tasks.map((task) => (
+            <li key={task._id} className={`task-item ${task.completed ? 'completed' : ''}`}>
+              <div className="task-info">
+                <div className="task-name">{task.task}</div>
+                <div className="task-due-date">{formatDate(task.dueDate)}</div>
+                <div className="task-actions">
+                  {!task.completed && (
+                    <button onClick={() => completeTask(task._id)}>Complete</button>
+                  )}
+                  <button onClick={() => removeTask(task._id)}>Delete</button>
+                  <button onClick={() => {
+                    setEditingTaskId(task._id);
+                    setEditingTaskText(task.task);
+                  }}>
+                    Edit
+                  </button>
+                </div>
+              </div>
+              {task.completed && (
+                <span className="completed-indicator">Completed</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
-}
+};
 
 export default App;

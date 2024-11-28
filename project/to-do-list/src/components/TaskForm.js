@@ -1,4 +1,3 @@
-// TaskForm.js
 import React, { useState, useEffect } from 'react';
 
 function TaskForm({ onTaskCreated, taskToEdit, onSaveEdit }) {
@@ -8,7 +7,7 @@ function TaskForm({ onTaskCreated, taskToEdit, onSaveEdit }) {
   // If editing a task, pre-fill the form with its data
   useEffect(() => {
     if (taskToEdit) {
-      setTaskName(taskToEdit.name);
+      setTaskName(taskToEdit.task);
       setDueDate(taskToEdit.dueDate);
     }
   }, [taskToEdit]);
@@ -16,49 +15,37 @@ function TaskForm({ onTaskCreated, taskToEdit, onSaveEdit }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!taskName || !dueDate) {
-      alert('Please fill up fields');
+      alert('Please fill out both fields.');
       return;
     }
 
     if (taskToEdit) {
-      // If editing, save the changes
-      onSaveEdit(taskName, dueDate);
+      // Edit existing task
+      onSaveEdit(taskToEdit._id, { task: taskName, dueDate });
     } else {
-      // Otherwise, create a new task
+      // Create new task
       onTaskCreated(taskName, dueDate);
     }
 
-    // Reset form after submission
+    // Clear the form
     setTaskName('');
     setDueDate('');
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: '0 auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-      <div style={{ marginBottom: '15px' }}>
-        <label htmlFor="taskName" style={{ display: 'block', marginBottom: '5px' }}>type in your task</label>
-        <input
-          type="text"
-          id="taskName"
-          value={taskName}
-          onChange={(e) => setTaskName(e.target.value)}
-          placeholder="Enter task description"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="dueDate">due date </label>
-        <input
-          type="date"
-          id="dueDate"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-      </div>
-
-      <button type="submit">
-        {taskToEdit ? 'save changes' : 'add task to list'}
-      </button>
+    <form onSubmit={handleSubmit}>
+      <input 
+        type="text" 
+        placeholder="Task description" 
+        value={taskName} 
+        onChange={(e) => setTaskName(e.target.value)} 
+      />
+      <input 
+        type="date" 
+        value={dueDate} 
+        onChange={(e) => setDueDate(e.target.value)} 
+      />
+      <button type="submit">{taskToEdit ? 'Save Changes' : 'Add Task'}</button>
     </form>
   );
 }
