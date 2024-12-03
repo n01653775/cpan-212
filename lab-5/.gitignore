@@ -1,0 +1,16 @@
+# Ignore node_modules folder
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore environment files (add your environment settings)
+.env
+
+# Ignore the build directory if you have one
+/dist
+/build
+
+# Ignore any other files you don't want to commit
+.DS_Store  # for macOS
+Thumbs.db   # for Windows
