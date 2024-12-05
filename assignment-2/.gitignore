@@ -1,0 +1,14 @@
+# Node.js modules
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# npm package-lock files (optional)
+package-lock.json
+
+# MacOS system files (optional)
+.DS_Store
